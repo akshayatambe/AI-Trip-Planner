@@ -3,7 +3,7 @@ import Landing from './pages/Landing.jsx'
 import Preferences from './pages/Preferences.jsx'
 import TripDetail from './pages/TripDetail.jsx'
 import MyTrips from './pages/MyTrips.jsx'
-import Profile from './pages/Profile.jsx'
+import Profile from './pages/profile.jsx'
 import OAuthCallback from './pages/OAuthCallback.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 
