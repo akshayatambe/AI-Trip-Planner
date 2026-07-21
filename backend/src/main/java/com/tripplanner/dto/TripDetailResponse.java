@@ -15,6 +15,7 @@ public record TripDetailResponse(
         String heroImageUrl,
         List<HotelDto> hotels,
         List<DayPlanDto> itinerary,
+        BudgetSummary budgetSummary,
         Instant createdAt
 ) {
 }

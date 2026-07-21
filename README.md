@@ -67,6 +67,9 @@ Required environment variables (see `backend/.env.example`):
 | `GEMINI_API_KEY`        | From Google AI Studio                             |
 | `JWT_SECRET`            | Any long random string (32+ chars)                |
 | `FRONTEND_URL`          | Where the React app runs (default `http://localhost:5173`) |
+| `BACKEND_URL`           | Where this API runs (default `http://localhost:8080`) — used to build image proxy URLs |
+| `GOOGLE_PLACES_API_KEY` | Optional. Real photos of the actual place (not generic stock photos). Enable "Places API" in the same Google Cloud project, requires billing enabled. |
+| `PEXELS_API_KEY`        | Optional. Fallback stock photo when Google Places has no photo for a place. |
 
 ## 3. Configure and run the frontend
 
@@ -92,10 +95,11 @@ The app starts on `http://localhost:5173`.
 
 ## Notes & next steps
 
-- **Images** are deterministic placeholder photos (`picsum.photos`, seeded by each
-  place's name) so the app works without any image API key. Swap the body of
-  `ImageService.resolve()` in the backend for a Google Places Photos or Unsplash API
-  call to show real photos of the actual places.
+- **Images**: `ImageService` tries Google Places Photos first (real photos of the
+  actual place — set `GOOGLE_PLACES_API_KEY`), falls back to Pexels stock photos
+  (set `PEXELS_API_KEY`), and finally falls back to a deterministic
+  `picsum.photos` placeholder if neither key is configured, so the app still
+  runs with zero image API keys.
 - **Production database:** switch `spring.datasource.*` in `application.yml` to
   PostgreSQL/MySQL and add the matching driver dependency — everything else (JPA
   entities, repositories) works unchanged.

@@ -15,13 +15,13 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-    }
-    return Promise.reject(error)
-  },
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token')
+      }
+      return Promise.reject(error)
+    },
 )
 
 /** Kicks off the Google OAuth2 flow by navigating to the backend. */
@@ -33,6 +33,7 @@ export const AuthAPI = {
   me: () => api.get('/auth/me').then((r) => r.data),
   login: (email, password) => api.post('/auth/login', { email, password }).then((r) => r.data),
   register: (name, email, password) => api.post('/auth/register', { name, email, password }).then((r) => r.data),
+  updateProfile: (name) => api.put('/auth/me', { name }).then((r) => r.data),
 }
 
 export const TripAPI = {

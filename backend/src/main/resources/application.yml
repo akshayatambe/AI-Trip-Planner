@@ -44,11 +44,19 @@ spring:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
   jwt:
-    secret: ${JWT_SECRET:this-is-a-development-only-secret-please-change-me-before-prod-0123456789}
-    expiration-ms: 604800000 # 7 days
+    secret: ${JWT_SECRET}
+    expiration-ms: 604800000
 
 gemini:
   api-key: ${GEMINI_API_KEY}
   model: gemini-flash-latest
   base-url: https://generativelanguage.googleapis.com/v1beta/models
+
+pexels:
+  api-key: ${PEXELS_API_KEY}
+
+google:
+  places:
+    api-key: ${GOOGLE_PLACES_API_KEY}

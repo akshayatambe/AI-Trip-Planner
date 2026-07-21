@@ -2,10 +2,12 @@ package com.tripplanner.controller;
 
 import com.tripplanner.dto.LoginRequest;
 import com.tripplanner.dto.RegisterRequest;
+import com.tripplanner.dto.UpdateProfileRequest;
 import com.tripplanner.dto.UserResponse;
 import com.tripplanner.model.User;
 import com.tripplanner.repository.UserRepository;
 import com.tripplanner.security.JwtService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +28,14 @@ public class AuthController {
 
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal User user) {
+        return UserResponse.from(user);
+    }
+
+    @PutMapping("/me")
+    public UserResponse updateMe(@AuthenticationPrincipal User user,
+                                 @Valid @RequestBody UpdateProfileRequest request) {
+        user.setName(request.name().trim());
+        user = userRepository.save(user);
         return UserResponse.from(user);
     }
 

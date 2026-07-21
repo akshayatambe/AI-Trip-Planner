@@ -94,51 +94,157 @@ public class GeminiService {
 
     private String buildPrompt(TripRequest request) {
         return """
-                You are an expert travel agent. Build a %d-day trip itinerary for %s.
+        You are an expert travel planner.
 
-                Trip details:
-                - Budget level: %s (CHEAP = hostels/street food, MODERATE = 3-4 star and mid-range restaurants, LUXURY = 5 star hotels and fine dining)
-                - Traveling as: %s
+        Create a realistic %d-day itinerary for %s.
 
-                Respond with ONLY raw JSON (no markdown fences, no commentary) matching EXACTLY this schema:
+        DESTINATION RULE:
+        If the destination given is a country, region, or otherwise too broad
+        for a single trip (e.g. "USA", "Europe", "India"), choose ONE well-known,
+        real city within it that best fits a typical tourist visit, and use
+        that specific city for the entire itinerary. Set "resolvedDestination"
+        to that specific city and country (e.g. "New York, USA"). If the
+        destination given is already a specific city, set "resolvedDestination"
+        to that same city (formatted as "City, Country").
 
-                {
-                  "hotels": [
-                    {
-                      "name": "string",
-                      "address": "string, full street address",
-                      "pricePerNight": "string like '$250/night'",
-                      "rating": 4.5,
-                      "imageQuery": "short string describing the hotel for an image search, e.g. 'The Ritz-Carlton exterior Chicago'"
-                    }
-                  ],
-                  "days": [
-                    {
-                      "dayNumber": 1,
-                      "morning": {
-                        "startTime": "10:00 AM",
-                        "endTime": "12:00 PM",
-                        "title": "string, name of place or activity",
-                        "description": "1-2 sentence description",
-                        "ticketInfo": "string like 'Free' or '$25 per person'",
-                        "imageQuery": "short string for an image search"
-                      },
-                      "afternoon": { same shape as morning },
-                      "evening": { same shape as morning, usually dinner }
-                    }
-                  ]
-                }
+        Trip Details:
+        - Budget: %s
+        - Traveling with: %s
 
-                Rules:
-                - Provide exactly 4 hotel recommendations appropriate to the budget level.
-                - Provide exactly %d day objects, dayNumber 1 through %d, with real, well-known, geographically accurate places/restaurants for %s.
-                - Vary the activities across days, don't repeat the same place twice.
-                - Keep descriptions concise and concrete.
-                - Output must be valid JSON and nothing else.
-                """.formatted(
-                request.days(), request.destination(),
-                request.budget(), request.travelWith(),
-                request.days(), request.days(), request.destination()
+        Return ONLY valid JSON.
+        Do NOT use markdown.
+        Do NOT include explanations.
+
+        JSON Schema:
+
+        {
+          "resolvedDestination": "string",
+          "hotels": [
+            {
+              "name": "string",
+              "address": "string",
+              "pricePerNight": "₹xxxx/night",
+              "rating": 4.5,
+              "imageQuery": "Hotel Name Destination"
+            }
+          ],
+          "days": [
+            {
+              "dayNumber": 1,
+              "morning": {
+                "startTime": "09:00 AM",
+                "endTime": "12:00 PM",
+                "title": "string",
+                "description": "string",
+                "ticketInfo": "₹200",
+                "imageQuery": "Landmark Destination"
+              },
+              "afternoon": {
+                "startTime": "12:30 PM",
+                "endTime": "03:30 PM",
+                "title": "string",
+                "description": "string",
+                "ticketInfo": "₹500",
+                "imageQuery": "Landmark Destination"
+              },
+              "evening": {
+                "startTime": "05:00 PM",
+                "endTime": "09:00 PM",
+                "title": "string",
+                "description": "string",
+                "ticketInfo": "₹700",
+                "imageQuery": "Landmark Destination"
+              }
+            }
+          ]
+        }
+
+        RULES
+
+        1. Recommend EXACTLY 4 hotels.
+
+        2. Generate EXACTLY %d days.
+
+        3. Use only REAL hotels, restaurants and tourist attractions.
+
+        4. Prices must be realistic in Indian Rupees.
+
+        5. Do not repeat attractions.
+
+        6. Keep descriptions short.
+
+        ==========================
+        IMAGE QUERY RULES
+        ==========================
+
+        imageQuery is ONLY used for searching photos.
+
+        The destination is: %s
+
+        For EVERY attraction:
+
+        imageQuery = Main Attraction Name + Destination
+
+        Examples:
+
+        Eiffel Tower Paris
+
+        Statue of Liberty New York
+
+        Hawa Mahal Jaipur
+
+        Gateway of India Mumbai
+
+        Marina Beach Chennai
+
+        Charminar Hyderabad
+
+        Baga Beach Goa
+
+        Mysore Palace Mysore
+
+        Do NOT include words like:
+
+        Breakfast
+        Lunch
+        Dinner
+        Walk
+        Sunset
+        Tour
+        Shopping
+        Picnic
+        Cafe
+        Restaurant
+        Hotel
+        Museum Visit
+        View Point
+        Activity
+        Entry Ticket
+
+        For hotels:
+
+        imageQuery = Hotel Name + Destination
+
+        IMPORTANT:
+
+        imageQuery should contain ONLY the place name and destination.
+
+        Do NOT include '&'.
+
+        Do NOT include commas.
+
+        Do NOT include itinerary text.
+
+        Do NOT include activity names.
+
+        Output ONLY valid JSON.
+        """.formatted(
+                request.days(),
+                request.destination(),
+                request.budget(),
+                request.travelWith(),
+                request.days(),
+                request.destination()
         );
     }
 }

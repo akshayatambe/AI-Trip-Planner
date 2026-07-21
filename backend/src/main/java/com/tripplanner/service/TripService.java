@@ -26,8 +26,12 @@ public class TripService {
     public TripDetailResponse generateAndSaveTrip(User user, TripRequest request) {
         GeneratedItinerary raw = geminiService.generateItinerary(request);
 
+        String resolvedDestination = raw.resolvedDestination() != null && !raw.resolvedDestination().isBlank()
+                ? raw.resolvedDestination()
+                : request.destination();
+
         List<HotelDto> hotels = raw.hotels().stream()
-                .map(h -> h.withImageUrl(imageService.resolveCard(h.imageQuery() != null ? h.imageQuery() : h.name())))
+                .map(h -> h.withImageUrl(resolveHotelImage(h, resolvedDestination)))
                 .collect(Collectors.toList());
 
         List<DayPlanDto> days = raw.days().stream()
@@ -39,9 +43,9 @@ public class TripService {
                 ))
                 .collect(Collectors.toList());
 
-        String heroImageUrl = imageService.resolveHero(request.destination());
+        String heroImageUrl = imageService.resolveHero(resolvedDestination);
 
-        GeneratedItinerary enriched = new GeneratedItinerary(hotels, days);
+        GeneratedItinerary enriched = new GeneratedItinerary(resolvedDestination, hotels, days);
         String itineraryJson;
         try {
             itineraryJson = objectMapper.writeValueAsString(enriched);
@@ -51,7 +55,7 @@ public class TripService {
 
         Trip trip = Trip.builder()
                 .user(user)
-                .destination(request.destination())
+                .destination(resolvedDestination)
                 .days(request.days())
                 .budget(request.budget())
                 .travelWith(request.travelWith())
@@ -88,13 +92,44 @@ public class TripService {
         tripRepository.delete(trip);
     }
 
+    private String resolveHotelImage(HotelDto hotel, String destination) {
+        // Google Places lookup disabled for now (requires billing setup) —
+        // go straight to Pexels/stock imagery, biased toward actual hotel photos.
+        return imageService.resolveHotelCard(hotel.imageQuery() != null ? hotel.imageQuery() : hotel.name());
+    }
+
     private ActivityDto withImage(ActivityDto activity) {
         if (activity == null) return null;
         return activity.withImageUrl(imageService.resolveCard(
                 activity.imageQuery() != null ? activity.imageQuery() : activity.title()));
     }
 
+    private BudgetSummary calculateBudgetSummary(Trip trip, List<HotelDto> hotels, List<DayPlanDto> days) {
+        double activitiesCost = days.stream()
+                .flatMap(d -> java.util.stream.Stream.of(d.morning(), d.afternoon(), d.evening()))
+                .filter(a -> a != null)
+                .mapToDouble(a -> PriceParser.parse(a.ticketInfo()))
+                .sum();
+
+        double cheapestHotelPerNight = hotels.stream()
+                .mapToDouble(h -> PriceParser.parse(h.pricePerNight()))
+                .filter(p -> p > 0)
+                .min()
+                .orElse(0.0);
+
+        int nights = Math.max(trip.getDays() - 1, 1);
+        double hotelTotal = cheapestHotelPerNight * nights;
+        double grandTotal = activitiesCost + hotelTotal;
+
+        String note = "Estimate only, based on the cheapest listed hotel for " + nights
+                + " night(s) plus all listed activity costs. Actual prices vary.";
+
+        return new BudgetSummary(activitiesCost, cheapestHotelPerNight, hotelTotal, grandTotal, note);
+    }
+
     private TripDetailResponse toDetailResponse(Trip trip, List<HotelDto> hotels, List<DayPlanDto> days) {
+        BudgetSummary summary = calculateBudgetSummary(trip, hotels, days);
+
         return new TripDetailResponse(
                 trip.getId(),
                 trip.getDestination(),
@@ -104,6 +139,7 @@ public class TripService {
                 trip.getHeroImageUrl(),
                 hotels,
                 days,
+                summary,
                 trip.getCreatedAt()
         );
     }
